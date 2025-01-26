@@ -1,0 +1,18 @@
+[
+    {
+      "targetFolder": "folder",
+      "sortBy": "name",
+      "includeSubfolders": true,
+      "whatIf": false,
+      "outputFile": "_index.md",
+      "vaultPath": "../demo_vault"
+    },
+    {
+      "targetFolder": "folder/subfolder",
+      "sortBy": "name",
+      "includeSubfolders": true,
+      "whatIf": false,
+      "outputFile": "index2.md",
+      "vaultPath": "../demo_vault"
+    }
+]

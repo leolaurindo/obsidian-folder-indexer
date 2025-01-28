@@ -13,7 +13,8 @@ A PowerShell script suite to generate customizable Map of Contents (MOCs) for Ob
 - [Quick Start](#quick-start)
 - [Features](#features)
 - [Usage](#usage)
-  - [Generating MOCs](#generating-mocs)
+  - [1. Generating MOCs](#1-generating-mocs)
+  - [2. Customize with optional parameters](#2-customize-with-optional-parameters)
 - [Automation tools](#automation-tools)
   - [1. Run multiple predefined parameters](#1-run-multiple-predefined-parameters)
   - [2. Console-based UI for `.bat` creation](#2-console-based-ui-for-bat-creation)
@@ -41,7 +42,7 @@ powershell -File src/update_index.ps1 -VaultPath "~/my_vault" -TargetFolder "Not
 
 # Usage
 
-## Generating MOCs
+## 1. Generating MOCs
 
 
 Run `update_index.ps1` with required parameters:
@@ -49,6 +50,8 @@ Run `update_index.ps1` with required parameters:
 ```cmd
 powershell -File src/update_index.ps1 -VaultPath <path/to/vault> -TargetFolder <path/to/folder-to-be-indexed>
 ```
+
+## 2. Customize with optional parameters
 
 | Parameter           | Description                          | Default       |
 |---------------------|--------------------------------------|---------------|

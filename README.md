@@ -106,7 +106,7 @@ Examples of output files are [here](outputs/indexGenerator_demo_vault_folder.bat
    
 # Motivation
 
-I couldn’t find an existing Obsidian plugin that generates simple MOCs in a fully customizable way. Plugin-based solutions either forced naming conventions or generated links that don’t behave like “real” links in graph view. I needed something straightforward and flexible—hence this script.
+I couldn’t find an existing Obsidian plugin that generates simple MOCs in a fully customizable way. Plugin-based solutions either forced naming conventions or generated links that don’t behave like “real” links in graph view. I needed something straightforward, flexible, [simple, non-commercial, open source](https://www.youtube.com/watch?v=XRpHIa-2XCE) —hence this script.
 
 
 ## Why powershell

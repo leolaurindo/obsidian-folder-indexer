@@ -1,5 +1,5 @@
 param(
-    [string]$JsonPath = "../parameters.json"
+    [string]$JsonPath = "./parameters.json"
 )
 
 $paramMappings = @{
@@ -40,6 +40,8 @@ foreach ($group in $groups) {
         Write-Warning "Skipping group - missing TargetFolder"
         continue
     }
+    $scriptDir = $PSScriptRoot
+    $updateIndexScriptPath = Join-Path -Path $scriptDir -ChildPath "update_index.ps1"
+    & $updateIndexScriptPath @params
 
-    .\update_index.ps1 @params
 }

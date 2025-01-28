@@ -5,7 +5,7 @@
       "includeSubfolders": true,
       "whatIf": false,
       "outputFile": "_index.md",
-      "vaultPath": "../demo_vault"
+      "vaultPath": "./demo_vault"
     },
     {
       "targetFolder": "folder/subfolder",
@@ -13,6 +13,6 @@
       "includeSubfolders": true,
       "whatIf": false,
       "outputFile": "index2.md",
-      "vaultPath": "../demo_vault"
+      "vaultPath": "./demo_vault"
     }
 ]

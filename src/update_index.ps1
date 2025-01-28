@@ -1,8 +1,3 @@
-<#
-.SYNOPSIS
-Generates Obsidian index files with vault-relative links
-#>
-
 param(
     [Parameter(Mandatory=$true)]
     [string]$VaultPath,
@@ -20,7 +15,6 @@ param(
     [string]$OutputFile = "_index.md"
 )
 
-# ========== PATH RESOLUTION ==========
 try {
     $VaultPath = (Resolve-Path $VaultPath).Path.Replace('\', '/').Trim('/')
 }
@@ -32,7 +26,6 @@ catch {
 $TargetFolder = $TargetFolder.Replace('\', '/').Trim('/')
 $folderPath = Join-Path -Path $VaultPath -ChildPath $TargetFolder
 
-# ========== VALIDATION ==========
 if (-not (Test-Path $VaultPath)) {
     Write-Error "Vault path not found: $VaultPath"
     exit 1
@@ -43,23 +36,27 @@ if (-not (Test-Path $folderPath)) {
     exit 1
 }
 
-# ========== RELATIVE PATH FUNCTION ==========
 function Get-VaultRelativePath {
     param($FullPath)
     
     $full = $FullPath.Replace('\', '/').Trim('/')
     $vaultRoot = $VaultPath.ToLower().Replace('\', '/').Trim('/')
     
-    if ($full.ToLower().StartsWith($vaultRoot)) {
-        $relative = $full.Substring($vaultRoot.Length).Trim('/')
-        return $relative -replace '\.md$', ''
+    if (-not $full.ToLower().StartsWith($vaultRoot)) {
+        Write-Error "File path '$FullPath' is not within vault root '$VaultPath'"
+        exit 1
     }
     
-    Write-Error "File path '$FullPath' is not within vault root '$VaultPath'"
-    exit 1
+    $targetFolderLeaf = $TargetFolder.Split('/')[-1]
+    $folderPathNormalized = $folderPath.Replace('\', '/').Trim('/') + '/'
+    $filePathNormalized = $full.Replace('\', '/')
+    
+    $relativeFromTargetFolder = $filePathNormalized.Substring($folderPathNormalized.Length).Trim('/')
+    $linkPath = "$targetFolderLeaf/$relativeFromTargetFolder" -replace '\.md$', ''
+    
+    return $linkPath
 }
 
-# ========== FILE PROCESSING ==========
 $params = @{
     Path        = $folderPath
     Filter      = "*.md"
@@ -77,14 +74,12 @@ catch {
     exit 1
 }
 
-# ========== SORTING ==========
 switch ($SortBy) {
     'name'  { $files = $files | Sort-Object Name }
     'date'  { $files = $files | Sort-Object LastWriteTime -Descending }
     'none'  { <# No sorting #> }
 }
 
-# ========== CONTENT GENERATION ==========
 $folderName = Split-Path -Path $TargetFolder -Leaf
 
 $frontMatter = @"
@@ -101,14 +96,19 @@ sort: $SortBy
 try {
     if ($IncludeSubfolders) {
         $content = $files | Group-Object {
-            $relPath = Get-VaultRelativePath $_.FullName
-            if ($relPath -match '/') { ($relPath -split '/' | Select-Object -First 1) } 
-            else { '[root]' }
+            $filePath = $_.FullName.Replace('\', '/')
+            $relativeFromTargetFolder = $filePath.Substring($folderPath.Replace('\', '/').Length + 1)
+            if ($relativeFromTargetFolder -match '^([^/]+)/') {
+                $Matches[1]
+            } else {
+                '[root]'
+            }
         } | Sort-Object { if ($_.Name -eq '[root]') { 0 } else { 1 } } | ForEach-Object {
             if ($_.Name -eq '[root]') {
                 $_.Group | ForEach-Object {
                     $linkPath = Get-VaultRelativePath $_.FullName
-                    "- [[$linkPath]]"
+                    $fileName = $linkPath.Split('/')[-1]
+                    "- [[$linkPath|$fileName]]"
                 }
             }
             else {
@@ -134,7 +134,6 @@ catch {
     exit 1
 }
 
-# ========== OUTPUT ==========
 $indexFile = Join-Path -Path $folderPath -ChildPath $OutputFile
 $fullContent = $frontMatter + "`n`n" + ($content -join "`n")
 

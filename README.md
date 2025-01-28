@@ -22,6 +22,7 @@ A PowerShell script suite to generate customizable Map of Contents (MOCs) for Ob
 - [Motivation](#motivation)
   - [Why powershell](#why-powershell)
   - [Weaknesses](#weaknesses)
+- [Next steps](#next-steps)
 - [Contributing](#contributing)
 
 # Quick Start
@@ -118,6 +119,12 @@ I wanted a cross-platform solution that’s straightforward to schedule on Windo
 - Not an official Obsidian plugin (though it can be integrated with existing plugins or scheduling tools).
 - Requires a manual or scheduled run every time you add files or want a new MOC.
 
+# Next steps
+
+- A `.sh` creator;
+- Frontmatter yaml customization (currently, can be customized only if changed inside the `update_index.ps1` script);
+- Ways to quickly insert new folders inside `parameters.json` without needing to manually open and insert new map of parameters;
+
 # Contributing
 
-- I would love this *javscripted* into an obsidian community plugin- 
+- I would love this *javscripted* into an obsidian community plugin.

@@ -51,6 +51,10 @@ Run `update_index.ps1` with required parameters:
 ```cmd
 powershell -File src/update_index.ps1 -VaultPath <path/to/vault> -TargetFolder <path/to/folder-to-be-indexed>
 ```
+| Mandatory Parameters |
+|----------------------|
+|- `VaultPath`: Path to vault's root. Can handle relative path, but works best with absolute paths.|
+|- `TargetFolder`: Path to folder to be indexed **relative from vault's root**. So if vault's path is `vault/path` and folder's path is `vault/path/parent_folder/folder`, `TargetFolder` parameter must receive `parent_folder/folder`.|
 
 - `VaultPath`: Path to vault's root. Can handle relative path, but works best with absolute paths.
 - `TargetFolder`: Path to folder to be indexed **relative from vault's root**. So if vault's path is `vault/path` and folder's path is `vault/path/parent_folder/folder`, `TargetFolder` parameter must receive `parent_folder/folder`.

@@ -1,32 +1,12 @@
 <#
 .SYNOPSIS
-Generates hierarchical Obsidian indexes with nested folder support.
-
-.DESCRIPTION
-Creates index.md files with:
-- YAML front matter
-- Folder name headers
-- Indented subfolder structures
-- Configurable sorting
-
-.PARAMETER TargetFolder
-Relative path to folder in your vault (e.g., "Projects" or "Notes/Work")
-
-.PARAMETER SortBy
-Sorting method: 'name' (default), 'date', or 'none'
-
-.PARAMETER IncludeSubfolders
-Include nested directories with indented hierarchy
-
-.PARAMETER WhatIf
-Preview changes without file modification
-
-.EXAMPLE
-./update_index.ps1 -TargetFolder "Research" -IncludeSubfolders
-./update_index.ps1 -TargetFolder "Notes/ClientA" -SortBy date -WhatIf
+Generates Obsidian index files with vault-relative links
 #>
 
 param(
+    [Parameter(Mandatory=$true)]
+    [string]$VaultPath,
+
     [Parameter(Mandatory=$true)]
     [string]$TargetFolder,
     
@@ -37,32 +17,67 @@ param(
     
     [switch]$WhatIf,
 
-    [string]$VaultPath = "",
-
     [string]$OutputFile = "_index.md"
 )
 
-# ========== PATH VALIDATION AND FILE PROCESSING ==========
-$folderPath = Join-Path -Path $VaultPath -ChildPath $TargetFolder
-$indexFile = Join-Path -Path $folderPath -ChildPath $OutputFile
-
-if (-not (Test-Path $folderPath)) {
-    Write-Error "Target folder not found: $folderPath"
+# ========== PATH RESOLUTION ==========
+try {
+    $VaultPath = (Resolve-Path $VaultPath).Path.Replace('\', '/').Trim('/')
+}
+catch {
+    Write-Error "Invalid vault path: $VaultPath"
     exit 1
 }
 
+$TargetFolder = $TargetFolder.Replace('\', '/').Trim('/')
+$folderPath = Join-Path -Path $VaultPath -ChildPath $TargetFolder
+
+# ========== VALIDATION ==========
+if (-not (Test-Path $VaultPath)) {
+    Write-Error "Vault path not found: $VaultPath"
+    exit 1
+}
+
+if (-not (Test-Path $folderPath)) {
+    Write-Error "Target folder not found in vault: $TargetFolder"
+    exit 1
+}
+
+# ========== RELATIVE PATH FUNCTION ==========
+function Get-VaultRelativePath {
+    param($FullPath)
+    
+    $full = $FullPath.Replace('\', '/').Trim('/')
+    $vaultRoot = $VaultPath.ToLower().Replace('\', '/').Trim('/')
+    
+    if ($full.ToLower().StartsWith($vaultRoot)) {
+        $relative = $full.Substring($vaultRoot.Length).Trim('/')
+        return $relative -replace '\.md$', ''
+    }
+    
+    Write-Error "File path '$FullPath' is not within vault root '$VaultPath'"
+    exit 1
+}
+
+# ========== FILE PROCESSING ==========
 $params = @{
-    Path = $folderPath
-    Filter = "*.md"
-    File = $true
+    Path        = $folderPath
+    Filter      = "*.md"
+    File        = $true
+    ErrorAction = 'Stop'
 }
 
 if ($IncludeSubfolders) { $params.Recurse = $true }
 
-$files = Get-ChildItem @params | 
-         Where-Object { $_.Name -ne $OutputFile }
+try {
+    $files = Get-ChildItem @params | Where-Object { $_.Name -ne $OutputFile }
+}
+catch {
+    Write-Error "Error reading files: $_"
+    exit 1
+}
 
-# ========== SORT DEFINITION==========
+# ========== SORTING ==========
 switch ($SortBy) {
     'name'  { $files = $files | Sort-Object Name }
     'date'  { $files = $files | Sort-Object LastWriteTime -Descending }
@@ -83,45 +98,57 @@ sort: $SortBy
 # Index of $folderName
 "@
 
-if ($IncludeSubfolders) {
-    $content = $files | Group-Object {
-        $relPath = $_.FullName.Substring($folderPath.Length + 1).Replace('\', '/') -replace '\.md$', ''
-        if ($relPath -match '/') { 
-            ($relPath -split '/' | Select-Object -First 1)
-        } else {
-            '[root]'
-        }
-    } | Sort-Object {
-        if ($_.Name -eq '[root]') { 0 } else { 1 }
-    } | ForEach-Object {
-        if ($_.Name -eq '[root]') {
-            $_.Group | ForEach-Object {
-                "- [[$($_.BaseName)]]"
+try {
+    if ($IncludeSubfolders) {
+        $content = $files | Group-Object {
+            $relPath = Get-VaultRelativePath $_.FullName
+            if ($relPath -match '/') { ($relPath -split '/' | Select-Object -First 1) } 
+            else { '[root]' }
+        } | Sort-Object { if ($_.Name -eq '[root]') { 0 } else { 1 } } | ForEach-Object {
+            if ($_.Name -eq '[root]') {
+                $_.Group | ForEach-Object {
+                    $linkPath = Get-VaultRelativePath $_.FullName
+                    "- [[$linkPath]]"
+                }
             }
-        } else {
-            # Subfolder with indented files
-            $subfolder = $_.Name
-            "- **$subfolder**"
-            $_.Group | ForEach-Object {
-                $fileRelPath = $_.FullName.Substring($folderPath.Length + 1).Replace('\', '/') -replace '\.md$', ''
-                $fileName = $fileRelPath.Split('/')[-1] 
-                "    - [[$fileRelPath|$fileName]]"
+            else {
+                $subfolder = $_.Name
+                "- **$subfolder**"
+                $_.Group | ForEach-Object {
+                    $linkPath = Get-VaultRelativePath $_.FullName
+                    $fileName = $linkPath.Split('/')[-1]
+                    "    - [[$linkPath|$fileName]]"
+                }
             }
         }
     }
-} else {
-    $content = $files | ForEach-Object {
-        "- [[$($_.BaseName)]]"
+    else {
+        $content = $files | ForEach-Object {
+            $linkPath = Get-VaultRelativePath $_.FullName
+            "- [[$linkPath]]"
+        }
     }
 }
+catch {
+    Write-Error "Error generating content: $_"
+    exit 1
+}
 
-# ========== FILE OUTPUT ==========
+# ========== OUTPUT ==========
+$indexFile = Join-Path -Path $folderPath -ChildPath $OutputFile
 $fullContent = $frontMatter + "`n`n" + ($content -join "`n")
 
 if ($WhatIf) {
     Write-Host "[WhatIf] Would update $indexFile`:"
     $fullContent
-} else {
-    $fullContent | Set-Content -Path $indexFile
-    Write-Host "Index updated for '$TargetFolder' (Sorted by: $SortBy, Subfolders: $IncludeSubfolders)"
+}
+else {
+    try {
+        $fullContent | Set-Content -Path $indexFile -ErrorAction Stop
+        Write-Host "Successfully updated index: $indexFile"
+    }
+    catch {
+        Write-Error "Failed to write index file: $_"
+        exit 1
+    }
 }

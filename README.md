@@ -28,7 +28,7 @@ A PowerShell script suite to generate customizable Map of Contents (MOCs) for Ob
 # Quick Start
 
 1. Clone this repository or download the `src/` scripts.
-2. Ensure PowerShell 5.1+ is installed ([check your version](https://aka.ms/PSVersion)).
+2. Ensure PowerShell 5.1+ is installed (check your version with `$PSVersionTable` on powershell or `powershell -$PSVersionTable`).
 
 ```cmd
 powershell -File src/update_index.ps1 -VaultPath "~/my_vault" -TargetFolder "Notes"
